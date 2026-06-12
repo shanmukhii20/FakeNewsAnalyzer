@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VerifAI — Fact Check Anything</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1A1A1A;
+    --paper: #F7F5F0;
+    --paper-dark: #EDE9E1;
+    --rule: #D6D2C9;
+    --muted: #6B7280;
+    --accent: #C41E3A;
+    --accent-light: #FFF0F2;
+    --verdict-real: #1A6B3A;
+    --verdict-real-bg: #E8F5EE;
+    --verdict-fake: #B91C1C;
+    --verdict-fake-bg: #FEE2E2;
+    --verdict-misleading: #B45309;
+    --verdict-misleading-bg: #FEF3C7;
+    --verdict-unclear: #374151;
+    --verdict-unclear-bg: #F3F4F6;
+    --serif: 'Playfair Display', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --max: 760px;
+  }
+
+  body {
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.6;
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .wordmark {
+    font-family: var(--serif);
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--ink);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    cursor: pointer;
+  }
+
+  .wordmark span {
+    color: var(--accent);
+  }
+
+  .header-tag {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* MAIN LAYOUT */
+  main {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  /* HERO */
+  .hero {
+    text-align: center;
+    padding: 3rem 0 2.5rem;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+
+  .hero h1 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 900;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 1rem;
+    max-width: 580px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero p {
+    font-size: 1.05rem;
+    color: var(--muted);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* INPUT CARD */
+  .input-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper-dark);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 0.85rem 1rem;
+    font-family: var(--sans);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .tab-btn.active {
+    color: var(--ink);
+    background: white;
+    border-bottom: 2px solid var(--accent);
+    margin-bottom: -1px;
+  }
+
+  .tab-icon {
+    font-size: 14px;
+  }
+
+  .tab-panel {
+    display: none;
+    padding: 1.5rem;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 0.85rem 1rem;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.6;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    border-color: var(--accent);
+    background: white;
+  }
+
+  textarea { min-height: 110px; }
+
+  .char-count {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 6px;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--rule);
+    border-radius: 3px;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--paper);
+  }
+
+  .upload-zone:hover {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    color: var(--muted);
+  }
+
+  .upload-zone p { font-size: 0.9rem; color: var(--muted); }
+  .upload-zone strong { color: var(--ink); font-weight: 500; }
+
+  #file-input { display: none; }
+
+  .image-preview {
+    display: none;
+    margin-top: 1rem;
+    position: relative;
+  }
+
+  .image-preview img {
+    max-height: 200px;
+    max-width: 100%;
+    border-radius: 3px;
+    border: 1px solid var(--rule);
+  }
+
+  .remove-img {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--ink);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .submit-row {
+    padding: 0 1.5rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .submit-hint {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .btn-check {
+    background: var(--ink);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-check:hover { background: #333; }
+  .btn-check:active { transform: scale(0.98); }
+  .btn-check:disabled { background: var(--muted); cursor: not-allowed; }
+
+  /* LOADING */
+  #loading-state {
+    display: none;
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2.5px solid var(--rule);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 1rem;
+  }
+
+  .loading-step {
+    font-size: 0.85rem;
+    color: var(--muted);
+    transition: color 0.3s;
+  }
+
+  .loading-step.active {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .loading-step.done {
+    color: var(--verdict-real);
+  }
+
+  /* RESULT */
+  #result-section {
+    display: none;
+  }
+
+  .result-header {
+    border: 1px solid var(--rule);
+    background: white;
+    border-radius: 4px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .verdict-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .verdict-badge {
+    font-family: var(--serif);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 1.25rem;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+
+  .verdict-badge.real {
+    background: var(--verdict-real-bg);
+    color: var(--verdict-real);
+    border: 1px solid #A7DFB9;
+  }
+
+  .verdict-badge.fake {
+    background: var(--verdict-fake-bg);
+    color: var(--verdict-fake);
+    border: 1px solid #FECACA;
+  }
+
+  .verdict-badge.misleading {
+    background: var(--verdict-misleading-bg);
+    color: var(--verdict-misleading);
+    border: 1px solid #FDE68A;
+  }
+
+  .verdict-badge.unclear {
+    background: var(--verdict-unclear-bg);
+    color: var(--verdict-unclear);
+    border: 1px solid #E5E7EB;
+  }
+
+  .confidence-ring {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .conf-label {
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+
+  .conf-bar {
+    width: 120px;
+    height: 6px;
+    background: var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .conf-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 1s ease;
+    background: var(--accent);
+  }
+
+  .conf-pct {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    min-width: 3rem;
+  }
+
+  .claim-text {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 1rem;
+  }
+
+  .result-meta {
+    font-size: 12px;
+    color: var(--muted);
+    padding-left: 1.25rem;
+  }
+
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2rem 0;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .reasoning-block {
+    border: 1px solid var(--rule);
+    background: white;
+    border-radius: 4px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .reasoning-block p {
+    color: #374151;
+    line-height: 1.75;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .reasoning-block p:last-child { margin-bottom: 0; }
+
+  /* SOURCES */
+  .sources-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  .source-card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    align-items: start;
+    transition: border-color 0.15s;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .source-card:hover {
+    border-color: var(--ink);
+  }
+
+  .source-favicon {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    background: var(--paper-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .source-title {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--ink);
+    margin-bottom: 3px;
+    line-height: 1.4;
+  }
+
+  .source-meta {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .source-snippet {
+    font-size: 0.82rem;
+    color: #4B5563;
+    line-height: 1.6;
+    border-left: 2px solid var(--rule);
+    padding-left: 10px;
+  }
+
+  .source-rank {
+    font-family: var(--serif);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin-top: 1px;
+  }
+
+  /* NEW CHECK BTN */
+  .new-check-btn {
+    background: none;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 0.65rem 1.5rem;
+    font-family: var(--sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 1rem;
+  }
+
+  .new-check-btn:hover { background: var(--paper-dark); }
+
+  /* ERROR */
+  .error-box {
+    background: var(--verdict-fake-bg);
+    border: 1px solid #FECACA;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    font-size: 0.9rem;
+    color: var(--verdict-fake);
+    display: none;
+    margin-bottom: 1rem;
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--rule);
+    padding: 2rem 1.5rem;
+    max-width: var(--max);
+    margin: 0 auto;
+  }
+
+  .footer-disclaimer {
+    font-size: 0.8rem;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .footer-disclaimer strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 540px) {
+    .submit-row { flex-direction: column; align-items: stretch; }
+    .btn-check { justify-content: center; }
+    .verdict-row { flex-direction: column; align-items: flex-start; }
+    .conf-bar { width: 80px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="wordmark" onclick="showHome()" title="VerifAI home">Verif<span>AI</span></a>
+    <span class="header-tag">Fact Checker</span>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <div class="hero" id="hero-section">
+    <p class="hero-eyebrow">Evidence-based analysis</p>
+    <h1>Is it real, or is it noise?</h1>
+    <p>Submit a claim, article URL, or screenshot. We search the open web for evidence and return a verdict with sources.</p>
+  </div>
+
+  <!-- INPUT -->
+  <div id="input-section">
+    <div class="input-card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('text', this)">
+          <span class="tab-icon">✏️</span> Text Claim
+        </button>
+        <button class="tab-btn" onclick="switchTab('url', this)">
+          <span class="tab-icon">🔗</span> Article URL
+        </button>
+        <button class="tab-btn" onclick="switchTab('image', this)">
+          <span class="tab-icon">🖼</span> Image
+        </button>
+      </div>
+
+      <div id="panel-text" class="tab-panel active">
+        <textarea id="text-input" placeholder="e.g. &quot;Scientists discovered that coffee cures cancer according to new Harvard study&quot;" maxlength="2000" oninput="updateCharCount(this, 'text-count')"></textarea>
+        <div class="char-count"><span id="text-count">0</span> / 2000</div>
+      </div>
+
+      <div id="panel-url" class="tab-panel">
+        <input type="text" id="url-input" placeholder="https://example.com/article-to-check" />
+        <div style="font-size:12px; color:var(--muted); margin-top:8px;">We'll retrieve the article content and check the claims within it.</div>
+      </div>
+
+      <div id="panel-image" class="tab-panel">
+        <div class="upload-zone" onclick="document.getElementById('file-input').click()" id="upload-zone">
+          <div class="upload-icon">📷</div>
+          <p><strong>Click to upload</strong> a screenshot, headline, or image</p>
+          <p style="margin-top:4px; font-size:11px;">PNG, JPG up to 5MB</p>
+        </div>
+        <input type="file" id="file-input" accept="image/*" onchange="handleImageUpload(event)">
+        <div class="image-preview" id="image-preview">
+          <img id="preview-img" src="" alt="Uploaded image preview">
+          <button class="remove-img" onclick="removeImage()" title="Remove image">✕</button>
+        </div>
+      </div>
+
+      <div class="submit-row">
+        <span class="submit-hint">Results are AI-assisted; always verify with primary sources.</span>
+        <button class="btn-check" id="check-btn" onclick="runCheck()">
+          <span>Check Now</span> →
+        </button>
+      </div>
+    </div>
+
+    <div class="error-box" id="error-box">⚠️ <span id="error-msg"></span></div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading-state">
+    <div class="loading-spinner"></div>
+    <p style="font-size:0.9rem; color:var(--muted); margin-bottom:0.5rem;">Analyzing your submission…</p>
+    <div class="loading-steps">
+      <div class="loading-step active" id="step-1">🔍 Extracting core claims…</div>
+      <div class="loading-step" id="step-2">📰 Searching sources across the web…</div>
+      <div class="loading-step" id="step-3">🧠 AI is analyzing evidence…</div>
+      <div class="loading-step" id="step-4">✅ Compiling verdict…</div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-section">
+    <div class="result-header">
+      <div class="verdict-row">
+        <span class="verdict-badge" id="verdict-badge">REAL</span>
+        <div class="confidence-ring">
+          <span class="conf-label">Confidence</span>
+          <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:0%"></div></div>
+          <span class="conf-pct" id="conf-pct">—</span>
+        </div>
+      </div>
+      <div class="claim-text" id="claim-display"></div>
+      <div class="result-meta" id="result-meta"></div>
+    </div>
+
+    <div class="section-label">AI Reasoning</div>
+    <div class="reasoning-block" id="reasoning-block"></div>
+
+    <div class="section-label">Sources Consulted</div>
+    <div class="sources-grid" id="sources-grid"></div>
+
+    <button class="new-check-btn" onclick="showHome()">← Check another claim</button>
+  </div>
+</main>
+
+<footer>
+  <p class="footer-disclaimer">
+    <strong>Honest limitations:</strong> VerifAI surfaces evidence and an AI judgment based on retrieved sources.
+    It is not a definitive arbiter of truth. Results may be incomplete or reflect the coverage available at search time.
+    Always verify with primary sources before drawing conclusions or sharing.
+  </p>
+</footer>
+
+<script>
+  let activeTab = 'text';
+  let uploadedImageBase64 = null;
+
+  function switchTab(tab, btn) {
+    activeTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    hideError();
+  }
+
+  function updateCharCount(el, countId) {
+    document.getElementById(countId).textContent = el.value.length;
+  }
+
+  function handleImageUpload(evt) {
+    const file = evt.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showError('Image must be under 5MB.'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      uploadedImageBase64 = e.target.result;
+      document.getElementById('preview-img').src = uploadedImageBase64;
+      document.getElementById('image-preview').style.display = 'block';
+      document.getElementById('upload-zone').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    uploadedImageBase64 = null;
+    document.getElementById('preview-img').src = '';
+    document.getElementById('image-preview').style.display = 'none';
+    document.getElementById('upload-zone').style.display = 'block';
+    document.getElementById('file-input').value = '';
+  }
+
+  function showError(msg) {
+    document.getElementById('error-msg').textContent = msg;
+    document.getElementById('error-box').style.display = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('error-box').style.display = 'none';
+  }
+
+  function showHome() {
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('input-section').style.display = 'block';
+    document.getElementById('hero-section').style.display = 'block';
+    document.getElementById('loading-state').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function animateLoadingSteps() {
+    const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
+    const delays = [0, 1400, 3000, 5000];
+    steps.forEach((id, i) => {
+      setTimeout(() => {
+        document.getElementById(id).classList.add('active');
+        if (i > 0) document.getElementById(steps[i-1]).classList.add('done');
+      }, delays[i]);
+    });
+  }
+
+  function getPayload() {
+    if (activeTab === 'text') {
+      const v = document.getElementById('text-input').value.trim();
+      if (!v) throw new Error('Please enter a claim to check.');
+      return { kind: 'text', content: v };
+    } else if (activeTab === 'url') {
+      const v = document.getElementById('url-input').value.trim();
+      if (!v) throw new Error('Please enter an article URL.');
+      try { new URL(v); } catch { throw new Error('Please enter a valid URL (including https://).'); }
+      return { kind: 'url', content: v };
+    } else {
+      if (!uploadedImageBase64) throw new Error('Please upload an image first.');
+      return { kind: 'image', content: uploadedImageBase64 };
+    }
+  }
+
+  async function runCheck() {
+    hideError();
+    let payload;
+    try {
+      payload = getPayload();
+    } catch(e) {
+      showError(e.message);
+      return;
+    }
+
+    document.getElementById('check-btn').disabled = true;
+    document.getElementById('input-section').style.display = 'none';
+    document.getElementById('hero-section').style.display = 'none';
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('result-section').style.display = 'none';
+
+    // Reset loading steps
+    ['step-1','step-2','step-3','step-4'].forEach(id => {
+      const el = document.getElementById(id);
+      el.classList.remove('active', 'done');
+    });
+    animateLoadingSteps();
+
+    try {
+      const result = await callFactCheckAPI(payload);
+      renderResult(result, payload);
+    } catch(e) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('input-section').style.display = 'block';
+      document.getElementById('hero-section').style.display = 'block';
+      showError(e.message || 'Something went wrong. Please try again.');
+    } finally {
+      document.getElementById('check-btn').disabled = false;
+    }
+  }
+
+  async function callFactCheckAPI(payload) {
+
+    const response = await fetch("http://127.0.0.1:5000/check", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            content: payload.content
+        })
+    });
+
+
+    if (!response.ok) {
+        throw new Error("Backend server error");
+    }
+
+
+    const data = await response.json();
+
+
+    return {
+        verdict: data.verdict || "UNVERIFIED",
+        confidence: data.confidence || 80,
+        claim_summary: data.claim_summary || payload.content,
+
+        reasoning: data.reasoning || data.result,
+
+        sources: data.sources || []
+    };
+}
+  function renderResult(data, payload) {
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+
+
+    const verdictMap = {
+        REAL: { cls: 'real', label: '✓ REAL' },
+        FAKE: { cls: 'fake', label: '✗ FAKE' },
+        MISLEADING: { cls: 'misleading', label: '⚠ MISLEADING' },
+        UNVERIFIED: { cls: 'unclear', label: '? UNVERIFIED' }
+    };
+
+
+    const verdict = verdictMap[data.verdict] || verdictMap.UNVERIFIED;
+
+
+    const badge = document.getElementById('verdict-badge');
+
+    badge.className = "verdict-badge " + verdict.cls;
+    badge.textContent = verdict.label;
+
+
+
+    let confidence = data.confidence || 0;
+
+    document.getElementById('conf-pct').textContent =
+        confidence + "%";
+
+
+    document.getElementById('conf-fill').style.width =
+        confidence + "%";
+
+
+
+    document.getElementById('claim-display').textContent =
+        data.claim_summary || payload.content;
+
+
+
+    let reasoningHtml = "";
+
+if (Array.isArray(data.reasoning)) {
+
+    reasoningHtml = "<ul>";
+
+    data.reasoning.forEach(point => {
+        reasoningHtml += `<li>${point}</li>`;
+    });
+
+    reasoningHtml += "</ul>";
+
+} else {
+
+    reasoningHtml = `<p>${data.reasoning || "No explanation available"}</p>`;
+}
+
+document.getElementById('reasoning-block').innerHTML = reasoningHtml;
+
+
+
+    document.getElementById('sources-grid').innerHTML = "";
+
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+}
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
